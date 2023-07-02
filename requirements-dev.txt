@@ -1,0 +1,10 @@
+# Linting
+pre-commit==2.19.0
+black==22.6.0
+isort==5.12.0
+flake8==4.0.1
+mypy==0.971
+
+# Tests
+pytest==7.2.1
+requests==2.27.1

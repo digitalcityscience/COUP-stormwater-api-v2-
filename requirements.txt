@@ -1,0 +1,12 @@
+fastapi==0.77.1
+pydantic[email]
+uvicorn==0.22.0
+tenacity==8.0.1
+celery[redis]==5.3.1
+requests==2.27.1
+python-dotenv==1.0.0
+
+swmmio==0.6.7
+swmm-toolkit
+scikit-build
+
