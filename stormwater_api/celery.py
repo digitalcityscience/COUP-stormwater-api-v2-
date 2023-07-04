@@ -8,17 +8,19 @@ import pandas as pd
 import swmmio
 from celery import Celery, signals
 from celery.utils.log import get_task_logger
-from swmm.toolkit import output, shared_enum, solver
 
 from redis import Redis
 from stormwater_api.config import settings
 from stormwater_api.models.calculation_input import CalculationTaskDefinition, Scenario
 
+# from swmm.toolkit import output, shared_enum, solver
+
+
 logger = get_task_logger(__name__)
 
 DATA_DIR = (Path(__file__).parent / "data").resolve()
 BLANK_GEOJSON = f"{DATA_DIR}/subcatchments.json"
-RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
+# RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
 
 
 class Cache:
@@ -88,7 +90,7 @@ def perform_swmm_analysis(scenario: Scenario, subcatchments: dict):
     solver.swmm_run(
         f"{DATA_DIR}/scenario.inp",
         f"{DATA_DIR}/scenario.rpt",
-        f"{DATA_DIR}/data/scenario.out",
+        f"{DATA_DIR}/scenario.out",
     )
     time.sleep(1)
 

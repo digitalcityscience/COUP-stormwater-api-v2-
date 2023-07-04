@@ -26,8 +26,6 @@ class CityPyoClient:
 
     # returns subcatchments geojson as dict
     def get_subcatchments(self, user_id: str) -> dict:
-        # TODO remove this line
-        return {"item_1": 0, "item_2": 3, "item_4": 3}
         if subcatchments := self._get_layer_for_user(user_id, "subcatchments"):
             return subcatchments
         raise CityPyoClientError(
@@ -35,14 +33,14 @@ class CityPyoClient:
         )
 
     # TODO discuss with Andre retry logic here
-    @tenacity.retry(
-        # retry=tenacity.retry_if_exception_type(
-        #     (TimeoutError, aiohttp.client_exceptions.ContentTypeError)
-        # ),
-        stop=tenacity.stop_after_attempt(settings.city_pyo.timeout_retry_count),
-        wait=tenacity.wait_fixed(settings.city_pyo.timeout_retry_wait_seconds),
-        reraise=True,
-    )
+    # @tenacity.retry(
+    #     # retry=tenacity.retry_if_exception_type(
+    #     #     (TimeoutError, aiohttp.client_exceptions.ContentTypeError)
+    #     # ),
+    #     stop=tenacity.stop_after_attempt(settings.city_pyo.timeout_retry_count),
+    #     wait=tenacity.wait_fixed(settings.city_pyo.timeout_retry_wait_seconds),
+    #     reraise=True,
+    # )
     def _get_layer_for_user(self, user_id: str, layer_name: str) -> dict:
         try:
             return self._call_city_pyo({"userid": user_id, "layer": layer_name})
@@ -58,5 +56,5 @@ class CityPyoClient:
         # TODO should this even be an error?
         raise CityPyoClientError(
             f"Response returned undesired status code: {response.status_code} "
-            f"when fetching {data['layer']} for user {data['user']}"
+            f"when fetching {data['layer']} for user {data['userid']}"
         )

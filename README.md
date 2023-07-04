@@ -6,7 +6,7 @@
 # --data-raw
 
 {
-    "cityPyoUser": "YOUR_CITYPYO_ID",
+    "cityPyoUser": "d71c87c15ec68e64bf6bc65382852b05",
      "flowPath":"blockToStreet",
      "roofs":"intensive",
      "returnPeriod": 100,
