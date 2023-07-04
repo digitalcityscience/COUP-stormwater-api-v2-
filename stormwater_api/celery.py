@@ -8,13 +8,11 @@ import pandas as pd
 import swmmio
 from celery import Celery, signals
 from celery.utils.log import get_task_logger
+from swmm.toolkit import output, shared_enum, solver
 
 from redis import Redis
 from stormwater_api.config import settings
 from stormwater_api.models.calculation_input import CalculationTaskDefinition, Scenario
-
-# from swmm.toolkit import output, shared_enum, solver
-
 
 logger = get_task_logger(__name__)
 
