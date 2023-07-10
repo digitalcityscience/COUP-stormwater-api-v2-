@@ -33,7 +33,6 @@ async def process_swimdocktask(calculation_input: CalculationInput):
         subcatchments=user_subcatchments,
     )
     compute_task(processed_input)
-    print(processed_input)
     return processed_input
 
 

@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM --platform=linux/x86_64 python:3.11
 
 # Tell Python to not generate .pyc
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -8,12 +8,11 @@ ENV PYTHONUNBUFFERED 1
 
 RUN pip install --upgrade pip
 RUN pip install --upgrade wheel
+RUN pip install scikit-build
 
 WORKDIR /app
 
-# Install regular packages
-COPY requirements.txt .
+COPY ./ .
+
 RUN pip install -r requirements.txt
 
-# Copy source code
-COPY ./ .

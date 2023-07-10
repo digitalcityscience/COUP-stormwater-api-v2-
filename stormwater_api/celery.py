@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import time
 from datetime import datetime
@@ -12,13 +13,25 @@ from swmm.toolkit import output, shared_enum, solver
 
 from redis import Redis
 from stormwater_api.config import settings
-from stormwater_api.models.calculation_input import CalculationTaskDefinition, Scenario
+from stormwater_api.models.calculation_input import (
+    CalculationTaskDefinition,
+    ModelUpdate,
+    Scenario,
+)
 
 logger = get_task_logger(__name__)
 
-DATA_DIR = (Path(__file__).parent / "data").resolve()
-BLANK_GEOJSON = f"{DATA_DIR}/subcatchments.json"
-# RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
+DATA_DIR = Path(__file__).parent / "data"
+INPUT_FILES = DATA_DIR / "input_files"
+OUTPUT_DIR = DATA_DIR / "output"
+
+# BLANK_GEOJSON = DATA_DIR / "subcatchments.json"
+RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
+
+
+def load_geojson(filepath: str) -> dict:
+    with open(filepath, "r") as file:
+        return json.load(file)
 
 
 class Cache:
@@ -50,52 +63,64 @@ def compute_task(task_def: CalculationTaskDefinition) -> dict:
         print(f"Result fetched from cache with key: {task_def.celery_key}")
         return result
 
-    return perform_swmm_analysis(task_def.scenario, task_def.subcatchments)
+    return perform_swmm_analysis(task_def)
+
+
+def _update_model(updates: list[ModelUpdate], model: swmmio.Model) -> None:
+    subs = model.inp.subcatchments
+    for update in updates:
+        # update the outlet_id in the row of subcatchment_id
+        subs.loc[update.subcatchment_id, ["Outlet"]] = update.outlet_id
+        model.inp.subcatchments = subs
 
 
 # TODO add id to file json in case more requests are being processed
-def save_subcatchments(subcatchments_geojson) -> None:
+def save_subcatchments(subcatchments_geojson: dict, dest_path: Path) -> None:
     # save geojson with subcatchments to disk
-    with open(f"{DATA_DIR}/subcatchments.json", "w") as fp:
+    with open(dest_path, "w") as fp:
         json.dump(subcatchments_geojson, fp)
 
 
-def make_inp_file(scenario: Scenario) -> None:
-    baseline = swmmio.Model(f"{DATA_DIR}/input_files/{scenario.input_filename}")
+def make_inp_file_for(scenario: Scenario, scenario_output_path: Path) -> None:
+    baseline = swmmio.Model(INPUT_FILES / scenario.input_filename)
     # reads updates to model from user input and updates the swmmio model
     if scenario.model_updates:
-        subs = baseline.inp.subcatchments
-
-        for update in scenario.model_updates:
-            # update the outlet_id in the row of subcatchment_id
-
-            subs.loc[update["subcatchment_id"], ["Outlet"]] = update["outlet_id"]
-            baseline.inp.subcatchments = subs
+        _update_model(scenario.model_updates, baseline)
 
     # Save the new model with the adjusted data
-    new_file_path = f"{DATA_DIR}/scenario.inp"
-    baseline.inp.save(new_file_path)
+    baseline.inp.save(scenario_output_path)
 
 
-def perform_swmm_analysis(scenario: Scenario, subcatchments: dict):
+def perform_swmm_analysis(task_def: CalculationTaskDefinition) -> dict:
     print("Creating input file...")
-    make_inp_file(scenario)
 
+    scenario_output_dir = OUTPUT_DIR / task_def.scenario_hash
+    os.makedirs(scenario_output_dir, exist_ok=True)
+
+    scenario_output_path = scenario_output_dir / "scenario.inp"
+    make_inp_file_for(task_def.scenario, scenario_output_path)
+
+    subcatchments_output_path = scenario_output_dir / "subcatchments.json"
     print("Saving subcatchments...")
-    save_subcatchments(subcatchments)
+    save_subcatchments(task_def.subcatchments, subcatchments_output_path)
 
     print("Computing scenario...")
+
+    calculation_output_path = scenario_output_dir / "scenario.out"
     solver.swmm_run(
-        f"{DATA_DIR}/scenario.inp",
-        f"{DATA_DIR}/scenario.rpt",
-        f"{DATA_DIR}/scenario.out",
+        str(scenario_output_path.resolve()),
+        str((scenario_output_dir / "scenario.rpt").resolve()),
+        str(calculation_output_path.resolve()),
     )
     time.sleep(1)
 
     return {
-        "rain": get_rain_for(scenario.return_period),
-        "geojson": get_result_geojson(),
+        "rain": get_rain_for(task_def.scenario.return_period),
+        "geojson": get_result_geojson(
+            scenario_output_path, calculation_output_path, subcatchments_output_path
+        ),
     }
+    # TODO delete file
 
 
 # reads the relevant rain_data file for the calculation settings and returns the rain data as list
@@ -112,10 +137,10 @@ def get_rain_for(return_period: int) -> list:
     2-yr 2021 01 01 00 05 1.143
     """
 
+    filename = DATA_DIR / "rain_data" / f"timeseries_{return_period}.txt"
+
     df = pd.read_csv(
-        f"{DATA_DIR}/rain_data/timeseries_"
-        + str(return_period)
-        + ".txt",  # get file for return period
+        filename,
         header=1,  # set row 1 as header
         delimiter=" ",  # delimiter is space
         skiprows=[2],  # ignore row number 2
@@ -124,35 +149,35 @@ def get_rain_for(return_period: int) -> list:
     return df["Value"].to_list()  # the rain amounts are in the column "Value"
 
 
+def _get_datetime_from_model(model: swmmio.Model, key_prefix: str) -> datetime:
+    date_str = model.inp.options.loc[f"{key_prefix}_DATE"].values[0]
+    time_str = model.inp.options.loc[f"{key_prefix}_TIME"].values[0]
+    return datetime.strptime(date_str + " " + time_str, "%d/%m/%Y %H:%M:%S")
+
+
 # reads simulation duration and report_step_duration from inp file
-def get_sim_duration_and_report_step():
+def get_sim_duration_and_report_step(scenario_path: Path) -> tuple[int, int]:
     # initialize a model model object
-    model = swmmio.Model(DATA_DIR + "/" + "scenario.inp")
+    model = swmmio.Model(str(scenario_path))
 
-    inp_start_date = model.inp.options.loc["START_DATE"].values[0]
-    inp_start_time = model.inp.options.loc["START_TIME"].values[0]
+    start_time = _get_datetime_from_model(model, "START")
+    end_time = _get_datetime_from_model(model, "END")
+    simulation_duration = int((end_time - start_time).total_seconds() / 60)
 
-    inp_end_date = model.inp.options.loc["END_DATE"].values[0]
-    inp_end_time = model.inp.options.loc["END_TIME"].values[0]
-
-    start_time = datetime.strptime(
-        inp_start_date + " " + inp_start_time, "%d/%m/%Y %H:%M:%S"
-    )
-    end_time = datetime.strptime(inp_end_date + " " + inp_end_time, "%d/%m/%Y %H:%M:%S")
     report_step = datetime.strptime(
         model.inp.options.loc["REPORT_STEP"].values[0], "%H:%M:%S"
     ).minute
 
-    simulation_duration = int((end_time - start_time).total_seconds() / 60)
-
     return simulation_duration, report_step
 
 
-def get_result_geojson():
-    sim_duration, report_step = get_sim_duration_and_report_step()
+def get_result_geojson(
+    scenario_path: Path, calculation_output_path: Path, subcatchments_path: Path
+):
+    sim_duration, report_step = get_sim_duration_and_report_step(scenario_path)
 
     _handle = output.init()
-    output.open(_handle, "./data/scenario.out")
+    output.open(_handle, str(calculation_output_path))
 
     subcatchment_count = output.get_proj_size(_handle)[0]
 
@@ -167,7 +192,7 @@ def get_result_geojson():
             print("missing a sub?? ", i)
 
     # iterate over subcatchemnt features in geojson and get timeseries results for subcatchment
-    geojson = load_geojson()
+    geojson = load_geojson(subcatchments_path)
     for feature in geojson["features"]:
         try:
             sub_id = result_sub_indexes[feature["properties"]["name_sub"]]
@@ -187,11 +212,6 @@ def get_result_geojson():
     output.close(_handle)
 
     return geojson
-
-
-def load_geojson():
-    with open(BLANK_GEOJSON, "r") as file:
-        return json.load(file)
 
 
 def is_valid_md5(checkme):

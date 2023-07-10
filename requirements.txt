@@ -6,7 +6,5 @@ celery[redis]==5.3.1
 requests==2.27.1
 python-dotenv==1.0.0
 
-swmmio==0.6.7
-swmm-toolkit
-scikit-build
-
+swmm-toolkit==0.9.1
+swmmio==0.6.2

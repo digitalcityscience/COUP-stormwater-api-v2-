@@ -22,11 +22,16 @@ class Roofs(StrEnum):
     intensive = auto()
 
 
+class ModelUpdate(BaseModelStrict):
+    outlet_id: str
+    subcatchment_id: str
+
+
 class Scenario(BaseModelStrict):
     return_period: int = Field(..., alias="returnPeriod")
     flow_path: FlowPath = Field(..., alias="flowPath")
     roofs: Roofs
-    model_updates: list[dict] | None = Field(None, alias="modelUpdates")
+    model_updates: list[ModelUpdate] | None
 
     @property
     def input_filename(self) -> str:
