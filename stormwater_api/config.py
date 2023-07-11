@@ -16,6 +16,7 @@ class Redis(BaseSettings):
     result_expires: bool = None  # Do not delete results from cache.
     result_persistent: bool = True
     enable_utc: bool = True
+    task_default_queue: str = "swimdock"
 
     @property
     def redis_url(self) -> str:
