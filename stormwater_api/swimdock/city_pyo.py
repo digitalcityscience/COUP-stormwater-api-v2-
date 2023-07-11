@@ -1,7 +1,6 @@
 import requests
 import tenacity
 
-from stormwater_api.config import settings
 from stormwater_api.exceptions import StormwaterApiError
 
 
