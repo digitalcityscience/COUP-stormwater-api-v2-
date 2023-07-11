@@ -8,3 +8,5 @@ python-dotenv==1.0.0
 
 swmm-toolkit==0.9.1
 swmmio==0.6.2
+
+flower==2.0.0
