@@ -19,7 +19,7 @@ services:
       # - ${REDIS_PORT}:${REDIS_PORT}
       - '6379:6379'
     restart: "always"
-    command: redis-server --appendonly yes
+    command: redis-server --requirepass localdev_redis_pass  --appendonly yes
     networks:
       &network_mode
       - bridgenet

@@ -20,7 +20,7 @@ class Redis(BaseSettings):
 
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}"
+        return f"redis://:{self.redis_pass}@{self.redis_host}:{self.redis_port}"
 
     @property
     def broker_url(self) -> str:
