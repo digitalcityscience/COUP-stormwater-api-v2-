@@ -45,7 +45,10 @@ services:
   flower:
     container_name: flower
     build: .
-    command: celery -A stormwater_api.celery worker flower --port=5555
+    command: celery -A stormwater_api.celery flower --port=5555
+    networks:
+      &network_mode
+      - bridgenet
     ports:
       - '5556:5555'
     env_file:
