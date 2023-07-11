@@ -33,12 +33,32 @@ services:
     networks:
       &network_mode
       - bridgenet
-    env_file: .env
+    env_file:
+      - .env
+    # environment:
+    #   - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    #   - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
     volumes:
       - ./:/app
     depends_on:
       - stormwater_api
       - redis
+  
+  flower:
+    container_name: flower
+    build: .
+    command: celery -A stormwater_api.celery worker flower --port=55555
+    ports:
+      - 5556:5555
+    # environment:
+    #   - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    #   - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    env_file:
+      - .env
+    depends_on:
+      - stormwater_api
+      - redis
+      - celery_worker
 
 networks:
   bridgenet:
