@@ -14,9 +14,6 @@ from stormwater_api.models.calculation_input import (
     Scenario,
 )
 
-DATA_DIR = Path(__file__).parent / "data"
-INPUT_FILES = DATA_DIR / "input_files"
-OUTPUT_DIR = DATA_DIR / "output"
 RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
 
 
@@ -31,6 +28,7 @@ class ScenarioProcessor:
         task_definition: CalculationTaskDefinition,
         base_output_dir: Path,
         input_files_dir: Path,
+        rain_data_dir: Path,
     ) -> None:
         self.task_definition = task_definition
         self.scenario: Scenario = self.task_definition.scenario
@@ -38,6 +36,7 @@ class ScenarioProcessor:
 
         self.base_output_dir = base_output_dir
         self.input_files_dir = input_files_dir
+        self.rain_data_dir = rain_data_dir
 
         self.scenario_inp_path = str(
             self.input_files_dir / self.scenario.input_filename
@@ -76,8 +75,7 @@ class ScenarioProcessor:
 
     # reads the relevant rain_data file for the calculation settings and returns the rain data as list
     # I did try to read it directly from the scenario.inp/out/rpt files instead,
-    @staticmethod
-    def _get_rain_for(return_period: int) -> list:
+    def _get_rain_for(self, return_period: int) -> list:
         """
         example timeseries file
         SWIMM needs this format.
@@ -89,7 +87,7 @@ class ScenarioProcessor:
         2-yr 2021 01 01 00 05 1.143
         """
 
-        filename = DATA_DIR / "rain_data" / f"timeseries_{return_period}.txt"
+        filename = self.rain_data_dir / f"timeseries_{return_period}.txt"
 
         df = pd.read_csv(
             filename,

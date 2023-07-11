@@ -1,23 +1,13 @@
 import json
-import os
 import re
-import time
-from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
-import swmmio
 from celery import Celery, signals
 from celery.utils.log import get_task_logger
-from swmm.toolkit import output, shared_enum, solver
 
 from redis import Redis
 from stormwater_api.config import settings
-from stormwater_api.models.calculation_input import (
-    CalculationTaskDefinition,
-    ModelUpdate,
-    Scenario,
-)
+from stormwater_api.models.calculation_input import CalculationTaskDefinition
 from stormwater_api.processor import ScenarioProcessor
 
 logger = get_task_logger(__name__)
@@ -25,14 +15,7 @@ logger = get_task_logger(__name__)
 DATA_DIR = Path(__file__).parent / "data"
 INPUT_DIR = DATA_DIR / "input_files"
 OUTPUT_DIR = DATA_DIR / "output"
-
-# BLANK_GEOJSON = DATA_DIR / "subcatchments.json"
-RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
-
-
-def load_geojson(filepath: str) -> dict:
-    with open(filepath, "r") as file:
-        return json.load(file)
+RAIN_DATA_DIR = DATA_DIR / "rain_data"
 
 
 class Cache:
@@ -69,6 +52,7 @@ def compute_task(task_def: CalculationTaskDefinition) -> dict:
         task_definition=task_def,
         base_output_dir=OUTPUT_DIR,
         input_files_dir=INPUT_DIR,
+        rain_data_dir=RAIN_DATA_DIR,
     )
 
     return processor.perform_swmm_analysis()
