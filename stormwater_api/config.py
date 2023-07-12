@@ -33,6 +33,8 @@ class Redis(BaseSettings):
 
 class CityPyo(BaseSettings):
     url: str = Field(..., env="CITY_PYO_URL")
+    client_id: str = Field(..., env="CITY_PYO_CLIENT_ID")
+    password: str = Field(..., env="CITY_PYO_PASSWORD")
     timeout_seconds: int = 30
     timeout_retry_count: int = 3
     timeout_retry_wait_seconds: int = 30
