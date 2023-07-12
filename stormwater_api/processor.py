@@ -9,7 +9,7 @@ import swmmio
 from swmm.toolkit import output, shared_enum, solver
 
 from stormwater_api.models.calculation_input import (
-    CalculationTaskDefinition,
+    CalculationTask,
     ModelUpdate,
     Scenario,
 )
@@ -25,7 +25,7 @@ def load_geojson(filepath: str) -> dict:
 class ScenarioProcessor:
     def __init__(
         self,
-        task_definition: CalculationTaskDefinition,
+        task_definition: CalculationTask,
         base_output_dir: Path,
         input_files_dir: Path,
         rain_data_dir: Path,

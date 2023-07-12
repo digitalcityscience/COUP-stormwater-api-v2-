@@ -47,7 +47,7 @@ class CalculationInput(Scenario):
     city_pyo_user: str = Field(..., alias="cityPyoUser")
 
 
-class CalculationTaskDefinition(BaseModelStrict):
+class CalculationTask(BaseModelStrict):
     scenario: Scenario
     subcatchments: dict  # TODO create a model for the subcatchments
 

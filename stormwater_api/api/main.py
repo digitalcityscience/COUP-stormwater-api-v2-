@@ -13,7 +13,7 @@ from stormwater_api.celery import celery_app
 from stormwater_api.dependencies import city_pyo_client
 from stormwater_api.models.calculation_input import (
     CalculationInput,
-    CalculationTaskDefinition,
+    CalculationTask,
     Scenario,
 )
 
@@ -30,7 +30,7 @@ async def process_swimdocktask(calculation_input: CalculationInput):
     user_subcatchments = city_pyo_client.get_subcatchments(
         calculation_input.city_pyo_user
     )
-    processed_input = CalculationTaskDefinition(
+    processed_input = CalculationTask(
         scenario=Scenario(**calculation_input.dict(by_alias=True)),
         subcatchments=user_subcatchments,
     )
@@ -48,6 +48,7 @@ async def get_task(task_id: str):
         "taskSucceeded": async_result.successful(),
         "resultReady": async_result.ready(),
     }
+
     if async_result.ready():
         response["result"] = async_result.get()
 

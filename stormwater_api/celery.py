@@ -7,7 +7,7 @@ from celery.utils.log import get_task_logger
 
 from redis import Redis
 from stormwater_api.config import settings
-from stormwater_api.models.calculation_input import CalculationTaskDefinition
+from stormwater_api.models.calculation_input import CalculationTask
 from stormwater_api.processor import ScenarioProcessor
 
 logger = get_task_logger(__name__)
@@ -42,8 +42,8 @@ celery_app = Celery(
 
 
 @celery_app.task()
-def compute_task(task_def: CalculationTaskDefinition) -> dict:
-    task_def = CalculationTaskDefinition(**task_def)
+def compute_task(task_def: CalculationTask) -> dict:
+    task_def = CalculationTask(**task_def)
     if result := cache.retrieve(key=task_def.celery_key):
         print(f"Result fetched from cache with key: {task_def.celery_key}")
         return result
