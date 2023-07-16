@@ -23,6 +23,7 @@ async def process_swimdocktask(calculation_input: CalculationInput):
         scenario=Scenario(**calculation_input.dict(by_alias=True)),
         subcatchments=user_subcatchments,
     )
+
     result = tasks.compute_task.delay(jsonable_encoder(processed_input))
     return {"taskId": result.id}
 

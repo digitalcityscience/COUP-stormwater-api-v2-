@@ -1,5 +1,4 @@
 import json
-import re
 from pathlib import Path
 
 from celery import Celery, signals
@@ -48,6 +47,8 @@ def compute_task(task_def: CalculationTask) -> dict:
         print(f"Result fetched from cache with key: {task_def.celery_key}")
         return result
 
+    print(f"Result with key: {task_def.celery_key} not found in cache.")
+
     processor = ScenarioProcessor(
         task_definition=task_def,
         base_output_dir=OUTPUT_DIR,
@@ -58,30 +59,13 @@ def compute_task(task_def: CalculationTask) -> dict:
     return processor.perform_swmm_analysis()
 
 
-def is_valid_md5(checkme):
-    if type(checkme) == str:
-        if re.findall(r"([a-fA-F\d]{32})", checkme):
-            return True
-
-    return False
-
-
 @signals.task_postrun.connect
 def task_postrun_handler(task_id, task, *args, **kwargs):
     state = kwargs.get("state")
-    args = kwargs.get("args")
+    args = kwargs.get("args")[0]
     result = kwargs.get("retval")
 
-    # only cache the "compute_task" task where the first 2 arguments are hashes
-    if is_valid_md5(args[0]) and is_valid_md5(args[1]):
-        # Cache only succeeded tasks
-        if state == "SUCCESS":
-            key = get_cache_key_compute_task(
-                scenario_hash=args[0], subcatchments_hash=args[1]
-            )
-            cache.save(key=key, value=result)
-            print("cached result with key %s" % key)
-
-
-def get_cache_key_compute_task(**kwargs):
-    return kwargs["scenario_hash"] + "_" + kwargs["subcatchments_hash"]
+    if state == "SUCCESS":
+        key = args["celery_key"]
+        cache.save(key=key, value=result)
+        print(f"Saved result with key {key} to cache.")
