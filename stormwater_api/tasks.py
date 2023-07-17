@@ -17,21 +17,12 @@ RAIN_DATA_DIR = DATA_DIR / "rain_data"
 
 @celery_app.task()
 def compute_task(task_def: CalculationTask) -> dict:
-    task_def = CalculationTask(**task_def)
-    if result := cache.get(key=task_def.celery_key):
-        print(f"Result fetched from cache with key: {task_def.celery_key}")
-        return result
-
-    print(f"Result with key: {task_def.celery_key} not found in cache.")
-
-    processor = ScenarioProcessor(
-        task_definition=task_def,
+    return ScenarioProcessor(
+        task_definition=CalculationTask(**task_def),
         base_output_dir=OUTPUT_DIR,
         input_files_dir=INPUT_DIR,
         rain_data_dir=RAIN_DATA_DIR,
-    )
-
-    return processor.perform_swmm_analysis()
+    ).perform_swmm_analysis()
 
 
 @signals.task_postrun.connect
@@ -43,4 +34,4 @@ def task_postrun_handler(task_id, task, *args, **kwargs):
     if state == "SUCCESS":
         key = args["celery_key"]
         cache.put(key=key, value=result)
-        print(f"Saved result with key {key} to cache.")
+        logger.info(f"Saved result with key {key} to cache.")

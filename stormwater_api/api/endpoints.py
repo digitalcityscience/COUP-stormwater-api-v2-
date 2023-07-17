@@ -2,9 +2,8 @@ from celery.result import AsyncResult
 from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 
-import stormwater_api.celery as tasks
-from stormwater_api.celery import celery_app
-from stormwater_api.dependencies import city_pyo_client
+import stormwater_api.tasks as tasks
+from stormwater_api.dependencies import cache, celery_app, city_pyo_client
 from stormwater_api.models.calculation_input import (
     CalculationInput,
     CalculationTask,
@@ -23,7 +22,13 @@ async def process_swimdocktask(calculation_input: CalculationInput):
         scenario=Scenario(**calculation_input.dict(by_alias=True)),
         subcatchments=user_subcatchments,
     )
+    if result := cache.get(key=processed_input.celery_key):
+        print(f"Result fetched from cache with key: {processed_input.celery_key}")
+        return result
 
+    print(
+        f"Result with key: {processed_input.celery_key} not found in cache. Starting calculation ..."
+    )
     result = tasks.compute_task.delay(jsonable_encoder(processed_input))
     return {"taskId": result.id}
 

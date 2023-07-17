@@ -27,7 +27,7 @@ services:
     container_name: celery_worker
     build: .
     restart: "always"
-    command: celery -A stormwater_api.celery worker --loglevel=info
+    command: celery -A stormwater_api.tasks worker --loglevel=info
     networks: *network_mode
     env_file:
       - .env
@@ -40,7 +40,7 @@ services:
   flower:
     container_name: flower
     build: .
-    command: celery -A stormwater_api.celery flower --port=5555
+    command: celery -A stormwater_api.tasks flower --port=5555
     networks: *network_mode
     ports:
       - '5556:5555'

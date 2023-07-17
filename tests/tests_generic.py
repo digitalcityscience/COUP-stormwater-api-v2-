@@ -1,6 +1,6 @@
 import json
 
-from stormwater_api.celery import perform_swmm_analysis
+from stormwater_api.tasks import perform_swmm_analysis
 
 
 def test():
