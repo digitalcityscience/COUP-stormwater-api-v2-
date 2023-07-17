@@ -143,6 +143,19 @@ class ScenarioProcessor:
 
         return simulation_duration, report_step
 
+    def _clean_up(self) -> None:
+        # deletes all files created by the calculation
+        directory_path = Path(self.scenario_output_dir)
+
+        # Ensure the provided path is a directory
+        if not directory_path.is_dir():
+            raise ValueError("The provided path is not a valid directory.")
+
+        # Iterate over all items (files and directories) in the directory
+        for item in directory_path.glob("**/*"):
+            if item.is_file():
+                item.unlink()  # Delete the file
+
     def _get_result_geojson(
         self,
     ):
@@ -182,5 +195,6 @@ class ScenarioProcessor:
             }
 
         output.close(_handle)
+        self._clean_up()
 
         return geojson
