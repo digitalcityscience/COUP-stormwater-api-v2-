@@ -1,11 +1,9 @@
-import json
 from pathlib import Path
 
-from celery import Celery, signals
+from celery import signals
 from celery.utils.log import get_task_logger
 
-from redis import Redis
-from stormwater_api.config import settings
+from stormwater_api.dependencies import cache, celery_app
 from stormwater_api.models.calculation_input import CalculationTask
 from stormwater_api.processor import ScenarioProcessor
 
@@ -17,33 +15,10 @@ OUTPUT_DIR = DATA_DIR / "output"
 RAIN_DATA_DIR = DATA_DIR / "rain_data"
 
 
-class Cache:
-    def __init__(self, redis_client: Redis) -> None:
-        self.redis_client = redis_client
-
-    def save(self, key: str, value: dict) -> None:
-        self.redis_client.set(key, json.dumps(value))
-
-    def retrieve(self, key: str) -> dict:
-        result = self.redis_client.get(key)
-        return {} if result is None else json.loads(result)
-
-
-redis_client = Redis(
-    host=settings.redis.redis_host,
-    port=settings.redis.redis_port,
-    password=settings.redis.redis_pass,
-)
-cache = Cache(redis_client=redis_client)
-celery_app = Celery(
-    __name__, broker=settings.redis.broker_url, backend=settings.redis.result_backend
-)
-
-
 @celery_app.task()
 def compute_task(task_def: CalculationTask) -> dict:
     task_def = CalculationTask(**task_def)
-    if result := cache.retrieve(key=task_def.celery_key):
+    if result := cache.get(key=task_def.celery_key):
         print(f"Result fetched from cache with key: {task_def.celery_key}")
         return result
 
@@ -67,5 +42,5 @@ def task_postrun_handler(task_id, task, *args, **kwargs):
 
     if state == "SUCCESS":
         key = args["celery_key"]
-        cache.save(key=key, value=result)
+        cache.put(key=key, value=result)
         print(f"Saved result with key {key} to cache.")

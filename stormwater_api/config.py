@@ -1,26 +1,23 @@
 from pydantic import BaseSettings, Field
 
 
-class Redis(BaseSettings):
-    # Available configs:
-    # https://docs.celeryproject.org/en/stable/userguide/configuration.html#new-lowercase-settings
+class RedisConnectionConfig(BaseSettings):
+    host: str = Field(..., env="REDIS_HOST")
+    port: int = Field(..., env="REDIS_PORT")
+    db: int = Field(..., env="REDIS_DB")
+    username: str = Field(..., env="REDIS_USERNAME")
+    password: str = Field(..., env="REDIS_PASSWORD")
+    ssl: bool = Field(..., env="REDIS_SSL")
 
-    redis_host: str = Field(..., env="REDIS_HOST")
-    redis_port: int = Field(6379, env="REDIS_PORT")
-    redis_pass: str = Field(6379, env="REDIS_PASS")
 
-    # Worker config
-    worker_concurrency: int = 10
-
-    # Result config
-    result_expires: bool = None  # Do not delete results from cache.
-    result_persistent: bool = True
-    enable_utc: bool = True
-    task_default_queue: str = "swimdock"
+class CacheRedis(BaseSettings):
+    connection: RedisConnectionConfig = Field(default_factory=RedisConnectionConfig)
+    key_prefix: str = "water_simulations"
+    ttl_days: int = Field(30, env="REDIS_CACHE_TTL_DAYS")
 
     @property
     def redis_url(self) -> str:
-        return f"redis://:{self.redis_pass}@{self.redis_host}:{self.redis_port}"
+        return f"redis://:{self.connection.password}@{self.connection.host}:{self.connection.port}"
 
     @property
     def broker_url(self) -> str:
@@ -29,6 +26,14 @@ class Redis(BaseSettings):
     @property
     def result_backend(self) -> str:
         return f"{self.redis_url}/1"
+
+
+class BrokerCelery(BaseSettings):
+    worker_concurrency: int = 10
+    result_expires: bool = None  # Do not delete results from cache.
+    result_persistent: bool = True
+    enable_utc: bool = True
+    task_default_queue: str = "swimdock"
 
 
 class CityPyo(BaseSettings):
@@ -45,7 +50,8 @@ class Settings(BaseSettings):
     description: str = Field(..., env="APP_DESCRIPTION")
     version: str = Field(..., env="APP_VERSION")
     debug: bool = Field(..., env="DEBUG")
-    redis: Redis = Field(default_factory=Redis)
+    cache: CacheRedis = Field(default_factory=CacheRedis)
+    broker: BrokerCelery = Field(default_factory=BrokerCelery)
     city_pyo: CityPyo = Field(default_factory=CityPyo)
 
 
