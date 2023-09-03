@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import time
 from datetime import datetime
@@ -9,10 +10,12 @@ import swmmio
 from swmm.toolkit import output, shared_enum, solver
 
 from stormwater_api.models.calculation_input import (
-    CalculationTask,
     ModelUpdate,
-    Scenario,
+    StormwaterScenario,
+    StormwaterTask,
 )
+
+logger = logging.getLogger(__name__)
 
 RUNOFF_ENUM = shared_enum.SubcatchAttribute.RUNOFF_RATE
 
@@ -25,13 +28,13 @@ def load_geojson(filepath: str) -> dict:
 class ScenarioProcessor:
     def __init__(
         self,
-        task_definition: CalculationTask,
+        task_definition: StormwaterTask,
         base_output_dir: Path,
         input_files_dir: Path,
         rain_data_dir: Path,
     ) -> None:
         self.task_definition = task_definition
-        self.scenario: Scenario = self.task_definition.scenario
+        self.scenario: StormwaterScenario = self.task_definition.scenario
         self.subcatchments = self.task_definition.subcatchments
 
         self.base_output_dir = base_output_dir
@@ -54,13 +57,13 @@ class ScenarioProcessor:
     def perform_swmm_analysis(self):
         os.makedirs(self.scenario_output_dir, exist_ok=True)
 
-        print("Creating input file...")
+        logger.info("Creating input file...")
         self._make_inp_file()
 
-        print("Saving subcatchments...")
+        logger.info("Saving subcatchments...")
         self._save_subcatchments(self.subcatchments, self.subcatchments_output_path)
 
-        print("Computing scenario...")
+        logger.info("Computing scenario...")
         solver.swmm_run(
             self.scenario_output_path,
             self.rpt_file_output_path,
@@ -99,7 +102,7 @@ class ScenarioProcessor:
         return df["Value"].to_list()  # the rain amounts are in the column "Value"
 
     def _make_inp_file(self) -> None:
-        print("Making inp file ...")
+        logger.info("Making inp file ...")
         baseline = swmmio.Model(self.scenario_inp_path)
 
         if self.scenario.model_updates:
@@ -109,7 +112,7 @@ class ScenarioProcessor:
 
     @staticmethod
     def _update_model(updates: list[ModelUpdate], model: swmmio.Model) -> None:
-        print("Updating model...")
+        logger.info("Updating model...")
 
         subs = model.inp.subcatchments
         for update in updates:
@@ -117,7 +120,7 @@ class ScenarioProcessor:
             subs.loc[update.subcatchment_id, ["Outlet"]] = update.outlet_id
             model.inp.subcatchments = subs
 
-        print("Scenario updated...")
+        logger.info("Scenario updated...")
 
     @staticmethod
     def _save_subcatchments(subcatchments_geojson: dict, dest_path: Path) -> None:
@@ -174,7 +177,7 @@ class ScenarioProcessor:
                     output.get_elem_name(_handle, shared_enum.SubcatchResult, i)
                 ] = i
             except Exception:
-                print("missing a sub?? ", i)
+                logger.info("missing a sub?? ", i)
 
         # iterate over subcatchemnt features in geojson and get timeseries results for subcatchment
         geojson = load_geojson(self.subcatchments_output_path)
@@ -182,7 +185,7 @@ class ScenarioProcessor:
             try:
                 sub_id = result_sub_indexes[feature["properties"]["name_sub"]]
             except Exception:
-                print("missing sub id in result", feature)
+                logger.info("missing sub id in result", feature)
                 continue
 
             run_offs = output.get_subcatch_series(

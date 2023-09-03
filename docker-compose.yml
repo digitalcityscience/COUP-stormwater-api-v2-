@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  stormwater_api:
+  stormwater-api:
     build: .
     env_file: .env
     ports:
@@ -12,8 +12,8 @@ services:
     volumes:
       - ./:/app
   
-  redis:
-    container_name: redis
+  redis-stormwater:
+    container_name: redis-stormwater
     image: redis:6.2-alpine
     ports:
       - ${REDIS_PORT:-6379}:6379
@@ -23,8 +23,8 @@ services:
     volumes:
       - "./redis/data:/data"
   
-  celery_worker:
-    container_name: celery_worker
+  celery-worker-stormwater:
+    container_name: celery-worker-stormwater
     build: .
     restart: "always"
     command: celery -A stormwater_api.tasks worker --loglevel=info
@@ -34,11 +34,11 @@ services:
     volumes:
       - ./:/app
     depends_on:
-      - stormwater_api
-      - redis
+      - stormwater-api
+      - redis-stormwater
   
   flower:
-    container_name: flower
+    container_name: flower-stormwater
     build: .
     command: celery -A stormwater_api.tasks flower --port=5555
     networks: *network_mode
@@ -47,9 +47,9 @@ services:
     env_file:
       - .env
     depends_on:
-      - stormwater_api
-      - redis
-      - celery_worker
+      - stormwater-api
+      - redis-stormwater
+      - celery-worker-stormwater
 
 networks:
   bridgenet:

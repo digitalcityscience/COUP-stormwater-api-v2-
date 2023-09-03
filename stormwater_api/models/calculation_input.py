@@ -27,7 +27,7 @@ class ModelUpdate(BaseModelStrict):
     subcatchment_id: str
 
 
-class Scenario(BaseModelStrict):
+class StormwaterScenario(BaseModelStrict):
     return_period: int = Field(..., alias="returnPeriod")
     flow_path: FlowPath = Field(..., alias="flowPath")
     roofs: Roofs
@@ -43,12 +43,12 @@ class Scenario(BaseModelStrict):
         return v
 
 
-class CalculationInput(Scenario):
+class StormwaterCalculationInput(StormwaterScenario):
     city_pyo_user: str = Field(..., alias="cityPyoUser")
 
 
-class CalculationTask(BaseModelStrict):
-    scenario: Scenario
+class StormwaterTask(BaseModelStrict):
+    scenario: StormwaterScenario
     subcatchments: dict  # TODO create a model for the subcatchments
 
     @property

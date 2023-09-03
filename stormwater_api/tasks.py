@@ -4,7 +4,7 @@ from celery import signals
 from celery.utils.log import get_task_logger
 
 from stormwater_api.dependencies import cache, celery_app
-from stormwater_api.models.calculation_input import CalculationTask
+from stormwater_api.models.calculation_input import StormwaterTask
 from stormwater_api.processor import ScenarioProcessor
 
 logger = get_task_logger(__name__)
@@ -16,9 +16,9 @@ RAIN_DATA_DIR = DATA_DIR / "rain_data"
 
 
 @celery_app.task()
-def compute_task(task_def: CalculationTask) -> dict:
+def compute_task(task_def: StormwaterTask) -> dict:
     return ScenarioProcessor(
-        task_definition=CalculationTask(**task_def),
+        task_definition=StormwaterTask(**task_def),
         base_output_dir=OUTPUT_DIR,
         input_files_dir=INPUT_DIR,
         rain_data_dir=RAIN_DATA_DIR,

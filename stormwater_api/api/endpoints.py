@@ -1,3 +1,5 @@
+import logging
+
 from celery.result import AsyncResult
 from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
@@ -5,28 +7,30 @@ from fastapi.encoders import jsonable_encoder
 import stormwater_api.tasks as tasks
 from stormwater_api.dependencies import cache, celery_app, city_pyo_client
 from stormwater_api.models.calculation_input import (
-    CalculationInput,
-    CalculationTask,
-    Scenario,
+    StormwaterCalculationInput,
+    StormwaterScenario,
+    StormwaterTask,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["tasks"])
 
 
 @router.post("/task")
-async def process_swimdocktask(calculation_input: CalculationInput):
+async def process_swimdocktask(calculation_input: StormwaterCalculationInput):
     user_subcatchments = city_pyo_client.get_subcatchments(
         calculation_input.city_pyo_user
     )
-    processed_input = CalculationTask(
-        scenario=Scenario(**calculation_input.dict(by_alias=True)),
+    processed_input = StormwaterTask(
+        scenario=StormwaterScenario(**calculation_input.dict(by_alias=True)),
         subcatchments=user_subcatchments,
     )
     if result := cache.get(key=processed_input.celery_key):
-        print(f"Result fetched from cache with key: {processed_input.celery_key}")
+        logger.info(f"Result fetched from cache with key: {processed_input.celery_key}")
         return result
 
-    print(
+    logger.info(
         f"Result with key: {processed_input.celery_key} not found in cache. Starting calculation ..."
     )
     result = tasks.compute_task.delay(jsonable_encoder(processed_input))
