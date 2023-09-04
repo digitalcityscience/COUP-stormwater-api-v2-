@@ -6,7 +6,7 @@ from fastapi.encoders import jsonable_encoder
 
 import stormwater_api.tasks as tasks
 from stormwater_api.auth.tokens import ApiUser, authorise_request
-from stormwater_api.dependencies import cache, celery_app, city_pyo_client
+from stormwater_api.dependencies import cache, celery_app
 from stormwater_api.models.calculation_input import (
     StormwaterCalculationInput,
     StormwaterScenario,
@@ -24,12 +24,10 @@ async def process_swimdocktask(
     user: ApiUser = Depends(authorise_request),
     calculation_input: StormwaterCalculationInput,
 ):
-    user_subcatchments = city_pyo_client.get_subcatchments(
-        calculation_input.city_pyo_user
-    )
     processed_input = StormwaterTask(
         scenario=StormwaterScenario(**calculation_input.dict(by_alias=True)),
-        subcatchments=user_subcatchments,
+        user_id=user.id,
+        subcatchments=calculation_input.subcatchments,
     )
     if result := cache.get(key=processed_input.celery_key):
         logger.info(f"Result fetched from cache with key: {processed_input.celery_key}")

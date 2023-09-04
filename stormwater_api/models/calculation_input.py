@@ -44,10 +44,11 @@ class StormwaterScenario(BaseModelStrict):
 
 
 class StormwaterCalculationInput(StormwaterScenario):
-    city_pyo_user: str = Field(..., alias="cityPyoUser")
+    subcatchments: dict
 
 
 class StormwaterTask(BaseModelStrict):
+    user_id: str
     scenario: StormwaterScenario
     subcatchments: dict  # TODO create a model for the subcatchments
 
