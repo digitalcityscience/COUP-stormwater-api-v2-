@@ -1,10 +1,11 @@
 import logging
 
 from celery.result import AsyncResult
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 
 import stormwater_api.tasks as tasks
+from stormwater_api.auth.tokens import ApiUser, authorise_request
 from stormwater_api.dependencies import cache, celery_app, city_pyo_client
 from stormwater_api.models.calculation_input import (
     StormwaterCalculationInput,
@@ -18,7 +19,11 @@ router = APIRouter(tags=["tasks"])
 
 
 @router.post("/task")
-async def process_swimdocktask(calculation_input: StormwaterCalculationInput):
+async def process_swimdocktask(
+    *,
+    user: ApiUser = Depends(authorise_request),
+    calculation_input: StormwaterCalculationInput,
+):
     user_subcatchments = city_pyo_client.get_subcatchments(
         calculation_input.city_pyo_user
     )
@@ -38,7 +43,7 @@ async def process_swimdocktask(calculation_input: StormwaterCalculationInput):
 
 
 @router.get("/tasks/{task_id}")
-async def get_task(task_id: str):
+async def get_task(*, user: ApiUser = Depends(authorise_request), task_id: str):
     async_result = AsyncResult(task_id, app=celery_app)
 
     response = {

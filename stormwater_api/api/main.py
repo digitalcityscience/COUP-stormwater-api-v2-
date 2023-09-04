@@ -8,8 +8,9 @@ from stormwater_api.api.exception_handlers import (
     auth_exception_handler,
     validation_exception_handler,
 )
+from stormwater_api.auth.tokens import AuthError
 from stormwater_api.config import settings
-from stormwater_api.exceptions import AuthError, StormwaterApiError
+from stormwater_api.exceptions import StormwaterApiError
 
 app = FastAPI(
     title=settings.title,

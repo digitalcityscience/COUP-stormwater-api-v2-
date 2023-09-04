@@ -5,7 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from stormwater_api.api.responses import StormwaterApiErrorResponse
-from stormwater_api.exceptions import AuthError, StormwaterApiError
+from stormwater_api.auth.tokens import AuthError
+from stormwater_api.exceptions import StormwaterApiError
 
 logger = logging.getLogger(__name__)
 
