@@ -1,3 +1,5 @@
+from typing import Literal, Optional
+
 from pydantic import BaseSettings, Field
 
 
@@ -58,6 +60,7 @@ class Settings(BaseSettings):
     broker: BrokerCelery = Field(default_factory=BrokerCelery)
     city_pyo: CityPyo = Field(default_factory=CityPyo)
     auth: Auth = Field(default_factory=Auth)
+    environment: Optional[Literal["LOCALDEV", "PROD"]] = Field(..., env="ENVIRONMENT")
 
 
 settings = Settings()
