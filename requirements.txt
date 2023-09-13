@@ -1,5 +1,5 @@
 fastapi==0.77.1
-pydantic[email]
+pydantic[email]==1.10.12
 uvicorn==0.22.0
 tenacity==8.0.1
 celery[redis]==5.3.1
