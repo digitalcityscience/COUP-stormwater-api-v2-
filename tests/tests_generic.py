@@ -8,7 +8,7 @@ def test():
         subcatchment_json = json.load(f)
 
     test_data = {
-        "city_pyo_user": "90af2ace6cb38ae1588547c6c20dcb36",
+        # "city_pyo_user": "90af2ace6cb38ae1588547c6c20dcb36",
         "flow_path": "blockToPark",
         "roofs": "extensive",
         "return_period": 2,

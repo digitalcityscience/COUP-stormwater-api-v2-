@@ -38,15 +38,6 @@ class BrokerCelery(BaseSettings):
     task_default_queue: str = "swimdock"
 
 
-class CityPyo(BaseSettings):
-    url: str = Field(..., env="CITY_PYO_URL")
-    client_id: str = Field(..., env="CITY_PYO_CLIENT_ID")
-    password: str = Field(..., env="CITY_PYO_PASSWORD")
-    timeout_seconds: int = 30
-    timeout_retry_count: int = 3
-    timeout_retry_wait_seconds: int = 30
-
-
 class Settings(BaseSettings):
     title: str = Field(..., env="APP_TITLE")
     description: str = Field(..., env="APP_DESCRIPTION")
@@ -54,7 +45,6 @@ class Settings(BaseSettings):
     debug: bool = Field(..., env="DEBUG")
     cache: CacheRedis = Field(default_factory=CacheRedis)
     broker: BrokerCelery = Field(default_factory=BrokerCelery)
-    city_pyo: CityPyo = Field(default_factory=CityPyo)
     environment: Optional[Literal["LOCALDEV", "PROD"]] = Field(..., env="ENVIRONMENT")
 
 
