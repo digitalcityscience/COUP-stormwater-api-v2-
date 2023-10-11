@@ -5,17 +5,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from stormwater_api.api.responses import StormwaterApiErrorResponse
-from stormwater_api.auth.tokens import AuthError
 from stormwater_api.exceptions import StormwaterApiError
 
 logger = logging.getLogger(__name__)
-
-
-async def auth_exception_handler(request, exc: AuthError):
-    return JSONResponse(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        content=StormwaterApiErrorResponse(message=exc.message).dict(),
-    )
 
 
 async def validation_exception_handler(request, exc: RequestValidationError):

@@ -47,10 +47,6 @@ class CityPyo(BaseSettings):
     timeout_retry_wait_seconds: int = 30
 
 
-class Auth(BaseSettings):
-    token_signing_key: str = Field(..., env="TOKEN_SIGNING_KEY", min_length=1)
-
-
 class Settings(BaseSettings):
     title: str = Field(..., env="APP_TITLE")
     description: str = Field(..., env="APP_DESCRIPTION")
@@ -59,7 +55,6 @@ class Settings(BaseSettings):
     cache: CacheRedis = Field(default_factory=CacheRedis)
     broker: BrokerCelery = Field(default_factory=BrokerCelery)
     city_pyo: CityPyo = Field(default_factory=CityPyo)
-    auth: Auth = Field(default_factory=Auth)
     environment: Optional[Literal["LOCALDEV", "PROD"]] = Field(..., env="ENVIRONMENT")
 
 

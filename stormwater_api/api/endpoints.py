@@ -1,11 +1,10 @@
 import logging
 
 from celery.result import AsyncResult
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 
 import stormwater_api.tasks as tasks
-from stormwater_api.auth.tokens import ApiUser, authorise_request
 from stormwater_api.dependencies import cache, celery_app
 from stormwater_api.models.calculation_input import (
     StormwaterCalculationInput,
@@ -20,13 +19,10 @@ router = APIRouter(tags=["tasks"])
 
 @router.post("/task")
 async def process_swimdocktask(
-    *,
-    user: ApiUser = Depends(authorise_request),
     calculation_input: StormwaterCalculationInput,
 ):
     processed_input = StormwaterTask(
         scenario=StormwaterScenario(**calculation_input.dict(by_alias=True)),
-        user_id=user.id,
         subcatchments=calculation_input.subcatchments,
     )
     if result := cache.get(key=processed_input.celery_key):
@@ -41,7 +37,7 @@ async def process_swimdocktask(
 
 
 @router.get("/tasks/{task_id}")
-async def get_task(*, user: ApiUser = Depends(authorise_request), task_id: str):
+async def get_task(task_id: str):
     async_result = AsyncResult(task_id, app=celery_app)
 
     response = {

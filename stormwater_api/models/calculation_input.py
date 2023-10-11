@@ -48,9 +48,8 @@ class StormwaterCalculationInput(StormwaterScenario):
 
 
 class StormwaterTask(BaseModelStrict):
-    user_id: str
     scenario: StormwaterScenario
-    subcatchments: dict  # TODO create a model for the subcatchments
+    subcatchments: dict
 
     @property
     def scenario_hash(self) -> str:
