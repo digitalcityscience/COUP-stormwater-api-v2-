@@ -1,7 +1,6 @@
 import hashlib
 import json
 from enum import auto
-
 from pydantic import Field, validator
 
 from stormwater_api.models.base import BaseModelStrict, StrEnum
@@ -32,6 +31,7 @@ class StormwaterScenario(BaseModelStrict):
     flow_path: FlowPath = Field(..., alias="flowPath")
     roofs: Roofs
     model_updates: list[ModelUpdate] | None
+    
 
     @property
     def input_filename(self) -> str:
@@ -45,6 +45,7 @@ class StormwaterScenario(BaseModelStrict):
 
 class StormwaterCalculationInput(StormwaterScenario):
     subcatchments: dict
+    result_format: str
 
 
 class StormwaterTask(BaseModelStrict):

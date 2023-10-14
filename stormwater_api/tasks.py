@@ -17,12 +17,14 @@ RAIN_DATA_DIR = DATA_DIR / "rain_data"
 
 @celery_app.task()
 def compute_task(task_def: StormwaterTask) -> dict:
-    return ScenarioProcessor(
+    calc_result =   ScenarioProcessor(
         task_definition=StormwaterTask(**task_def),
         base_output_dir=OUTPUT_DIR,
         input_files_dir=INPUT_DIR,
         rain_data_dir=RAIN_DATA_DIR,
     ).perform_swmm_analysis()
+
+    return {"result_format": task_def["result_format"], "geojson": calc_result}
 
 
 @signals.task_postrun.connect
