@@ -5,12 +5,13 @@ from fastapi.exceptions import RequestValidationError
 from stormwater_api.api.endpoints import router as tasks_router
 from stormwater_api.api.exception_handlers import (
     api_error_superclass_exception_handler,
-    auth_exception_handler,
     validation_exception_handler,
 )
-from stormwater_api.auth.tokens import AuthError
 from stormwater_api.config import settings
 from stormwater_api.exceptions import StormwaterApiError
+from stormwater_api.logs import setup_logging
+
+setup_logging()
 
 app = FastAPI(
     title=settings.title,
@@ -25,7 +26,6 @@ async def health_check():
 
 
 app.include_router(tasks_router)
-app.add_exception_handler(AuthError, auth_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(StormwaterApiError, api_error_superclass_exception_handler)
 
