@@ -2,6 +2,7 @@ import hashlib
 import json
 from enum import auto
 
+from fastapi.encoders import jsonable_encoder
 from pydantic import validator
 
 from stormwater_api.models.base import BaseModelStrict, StrEnum
@@ -54,7 +55,7 @@ class StormwaterCalculationInput(StormwaterScenario):
                 "return_period": self.return_period,
                 "flow_path": self.flow_path,
                 "roofs": self.roofs,
-                # "model_updates": self.model_updates.dict(),
+                "model_updates": jsonable_encoder(self.model_updates),
             }
         )
 
