@@ -20,4 +20,14 @@ lint:
 	isort --check ./stormwater_api/ ./tests/
 	flake8 ./stormwater_api/ ./tests/
 	mypy ./stormwater_api/ ./tests/
-	
+
+build:
+	docker compose build
+
+test-it: build 
+	docker compose --env-file .env.example run --rm -it  --entrypoint bash stormwater-api -c "/bin/bash"
+	docker compose down -v
+
+test-docker: build
+	docker-compose --env-file .env.example run --rm  stormwater-api sh -c "sleep 5 && pytest $(pytest-args)"
+	docker compose down -v

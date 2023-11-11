@@ -11,6 +11,9 @@ services:
       - bridgenet
     volumes:
       - ./:/app
+    depends_on:
+      - celery-worker-stormwater
+      - redis-stormwater
   
   redis-stormwater:
     container_name: redis-stormwater
@@ -33,9 +36,7 @@ services:
       - .env
     volumes:
       - ./:/app
-    depends_on:
-      - stormwater-api
-      - redis-stormwater
+    
   
   # flower:
   #   container_name: flower-stormwater
