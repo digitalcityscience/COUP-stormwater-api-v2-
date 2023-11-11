@@ -11,8 +11,7 @@ from swmm.toolkit import output, shared_enum, solver
 
 from stormwater_api.models.calculation_input import (
     ModelUpdate,
-    StormwaterScenario,
-    StormwaterTask,
+    StormwaterCalculationInput,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,13 +27,13 @@ def load_geojson(filepath: str) -> dict:
 class ScenarioProcessor:
     def __init__(
         self,
-        task_definition: StormwaterTask,
+        task_definition: StormwaterCalculationInput,
         base_output_dir: Path,
         input_files_dir: Path,
         rain_data_dir: Path,
     ) -> None:
         self.task_definition = task_definition
-        self.scenario: StormwaterScenario = self.task_definition.scenario
+        self.scenario: StormwaterCalculationInput = self.task_definition
         self.subcatchments = self.task_definition.subcatchments
 
         self.base_output_dir = base_output_dir

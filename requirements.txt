@@ -10,5 +10,3 @@ swmm-toolkit==0.9.1
 swmmio==0.6.2
 
 flower==2.0.0
-
-pyjwt[crypto]==2.8.0
