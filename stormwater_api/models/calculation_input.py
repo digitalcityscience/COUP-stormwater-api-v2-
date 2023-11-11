@@ -2,7 +2,7 @@ import hashlib
 import json
 from enum import auto
 
-from pydantic import Field, validator
+from pydantic import validator
 
 from stormwater_api.models.base import BaseModelStrict, StrEnum
 
@@ -28,8 +28,8 @@ class ModelUpdate(BaseModelStrict):
 
 
 class StormwaterScenario(BaseModelStrict):
-    return_period: int = Field(..., alias="returnPeriod")
-    flow_path: FlowPath = Field(..., alias="flowPath")
+    return_period: int
+    flow_path: FlowPath
     roofs: Roofs
     model_updates: list[ModelUpdate] | None
 
