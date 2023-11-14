@@ -120,7 +120,8 @@ class ScenarioProcessor:
     def _get_datetime_from_model(model: swmmio.Model, key_prefix: str) -> datetime:
         date_str = model.inp.options.loc[f"{key_prefix}_DATE"].values[0]
         time_str = model.inp.options.loc[f"{key_prefix}_TIME"].values[0]
-        return datetime.strptime(date_str + " " + time_str, "%d/%m/%Y %H:%M:%S")
+        datetime_str = f"{date_str} {time_str}"
+        return datetime.strptime(datetime_str, "%d/%m/%Y %H:%M:%S")
 
     # reads simulation duration and report_step_duration from inp file
     def _get_sim_duration_and_report_step(self) -> tuple[int, int]:
