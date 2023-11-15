@@ -11,8 +11,7 @@ from swmm.toolkit import output, shared_enum, solver
 
 from stormwater_api.models.calculation_input import (
     ModelUpdate,
-    StormwaterScenario,
-    StormwaterTask,
+    StormwaterCalculationInput,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,31 +27,21 @@ def load_geojson(filepath: str) -> dict:
 class ScenarioProcessor:
     def __init__(
         self,
-        task_definition: StormwaterTask,
+        task_definition: StormwaterCalculationInput,
         base_output_dir: Path,
         input_files_dir: Path,
         rain_data_dir: Path,
     ) -> None:
-        self.task_definition = task_definition
-        self.scenario: StormwaterScenario = self.task_definition.scenario
-        self.subcatchments = self.task_definition.subcatchments
-
-        self.base_output_dir = base_output_dir
-        self.input_files_dir = input_files_dir
+        
+        self.task = task_definition
+        self.scenario_inp_path = input_files_dir / self.task.input_filename
+        self.scenario_output_dir = base_output_dir / self.task.scenario_hash
         self.rain_data_dir = rain_data_dir
 
-        self.scenario_inp_path = str(
-            self.input_files_dir / self.scenario.input_filename
-        )
-        self.scenario_output_dir = str(
-            self.base_output_dir / task_definition.scenario_hash
-        )
-        self.scenario_output_path = f"{self.scenario_output_dir}/scenario.inp"
-        self.subcatchments_output_path = (
-            f"{self.scenario_output_dir}/subcatchments.json"
-        )
-        self.calculation_output_path = f"{self.scenario_output_dir}/scenario.out"
-        self.rpt_file_output_path = f"{self.scenario_output_dir}/scenario.rpt"
+        self.scenario_output_path = str(self.scenario_output_dir / "scenario.inp")
+        self.subcatchments_output_path = str(self.scenario_output_dir / "subcatchments.json")
+        self.calculation_output_path = str(self.scenario_output_dir / "scenario.out")
+        self.rpt_file_output_path = str(self.scenario_output_dir / "scenario.rpt")
 
     def perform_swmm_analysis(self):
         os.makedirs(self.scenario_output_dir, exist_ok=True)
@@ -61,7 +50,7 @@ class ScenarioProcessor:
         self._make_inp_file()
 
         logger.info("Saving subcatchments...")
-        self._save_subcatchments(self.subcatchments, self.subcatchments_output_path)
+        self._save_subcatchments(self.task.subcatchments, self.subcatchments_output_path)
 
         logger.info("Computing scenario...")
         solver.swmm_run(
@@ -72,7 +61,7 @@ class ScenarioProcessor:
         time.sleep(1)
 
         return {
-            "rain": self._get_rain_for(self.scenario.return_period),
+            "rain": self._get_rain_for(self.task.return_period),
             "geojson": self._get_result_geojson(),
         }
 
@@ -105,8 +94,8 @@ class ScenarioProcessor:
         logger.info("Making inp file ...")
         baseline = swmmio.Model(self.scenario_inp_path)
 
-        if self.scenario.model_updates:
-            self._update_model(self.scenario.model_updates, baseline)
+        if self.task.model_updates:
+            self._update_model(self.task.model_updates, baseline)
 
         baseline.inp.save(self.scenario_output_path)
 
@@ -131,7 +120,8 @@ class ScenarioProcessor:
     def _get_datetime_from_model(model: swmmio.Model, key_prefix: str) -> datetime:
         date_str = model.inp.options.loc[f"{key_prefix}_DATE"].values[0]
         time_str = model.inp.options.loc[f"{key_prefix}_TIME"].values[0]
-        return datetime.strptime(date_str + " " + time_str, "%d/%m/%Y %H:%M:%S")
+        datetime_str = f"{date_str} {time_str}"
+        return datetime.strptime(datetime_str, "%d/%m/%Y %H:%M:%S")
 
     # reads simulation duration and report_step_duration from inp file
     def _get_sim_duration_and_report_step(self) -> tuple[int, int]:
@@ -171,7 +161,7 @@ class ScenarioProcessor:
 
         # lookup table for result index by subcatchment name
         result_sub_indexes = {}
-        for i in range(0, subcatchment_count):
+        for i in range(subcatchment_count):
             try:
                 result_sub_indexes[
                     output.get_elem_name(_handle, shared_enum.SubcatchResult, i)

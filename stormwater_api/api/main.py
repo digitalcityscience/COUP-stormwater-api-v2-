@@ -25,7 +25,7 @@ async def health_check():
     return "ok"
 
 
-app.include_router(tasks_router)
+app.include_router(tasks_router, prefix="/stormwater")
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(StormwaterApiError, api_error_superclass_exception_handler)
 

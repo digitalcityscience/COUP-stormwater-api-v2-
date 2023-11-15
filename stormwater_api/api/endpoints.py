@@ -6,34 +6,28 @@ from fastapi.encoders import jsonable_encoder
 
 import stormwater_api.tasks as tasks
 from stormwater_api.dependencies import cache, celery_app
-from stormwater_api.models.calculation_input import (
-    StormwaterCalculationInput,
-    StormwaterScenario,
-    StormwaterTask,
-)
+from stormwater_api.models.calculation_input import StormwaterCalculationInput
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["tasks"])
 
 
-@router.post("/task")
+@router.post("/tasks")
 async def process_swimdocktask(
     calculation_input: StormwaterCalculationInput,
 ):
-    processed_input = StormwaterTask(
-        scenario=StormwaterScenario(**calculation_input.dict(by_alias=True)),
-        subcatchments=calculation_input.subcatchments,
-    )
-    if result := cache.get(key=processed_input.celery_key):
-        logger.info(f"Result fetched from cache with key: {processed_input.celery_key}")
+    if result := cache.get(key=calculation_input.celery_key):
+        logger.info(
+            f"Result fetched from cache with key: {calculation_input.celery_key}"
+        )
         return result
 
     logger.info(
-        f"Result with key: {processed_input.celery_key} not found in cache. Starting calculation ..."
+        f"Result with key: {calculation_input.celery_key} not found in cache. Starting calculation ..."
     )
-    result = tasks.compute_task.delay(jsonable_encoder(processed_input))
-    return {"taskId": result.id}
+    result = tasks.compute_task.delay(jsonable_encoder(calculation_input))
+    return {"task_id": result.id}
 
 
 @router.get("/tasks/{task_id}")
@@ -41,13 +35,23 @@ async def get_task(task_id: str):
     async_result = AsyncResult(task_id, app=celery_app)
 
     response = {
-        "taskId": async_result.id,
-        "taskState": async_result.state,
-        "taskSucceeded": async_result.successful(),
-        "resultReady": async_result.ready(),
+        "task_id": async_result.id,
+        "task_state": async_result.state,
+        "task_succeeded": async_result.successful(),
+        "result_ready": async_result.ready(),
     }
 
     if async_result.ready():
         response["result"] = async_result.get()
 
     return response
+
+
+@router.get("/tasks/{task_id}/status")
+async def get_task_status(task_id: str):
+    async_result = AsyncResult(task_id, app=celery_app)
+    state = async_result.state
+    if state == "FAILURE":
+        state = f"FAILURE : {str(async_result.get())}"
+
+    return {"status": state}
