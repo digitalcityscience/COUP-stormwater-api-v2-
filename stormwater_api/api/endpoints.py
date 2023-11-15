@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["tasks"])
 
 
-@router.post("/task")
+@router.post("/tasks")
 async def process_swimdocktask(
     calculation_input: StormwaterCalculationInput,
 ):
@@ -45,3 +45,13 @@ async def get_task(task_id: str):
         response["result"] = async_result.get()
 
     return response
+
+
+@router.get("/tasks/{task_id}/status")
+async def get_task_status(task_id: str):
+    async_result = AsyncResult(task_id, app=celery_app)
+    state = async_result.state
+    if state == "FAILURE":
+        state = f"FAILURE : {str(async_result.get())}"
+
+    return {"status": state}

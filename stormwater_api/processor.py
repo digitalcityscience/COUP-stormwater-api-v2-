@@ -94,7 +94,7 @@ class ScenarioProcessor:
         logger.info("Making inp file ...")
         baseline = swmmio.Model(self.scenario_inp_path)
 
-        if self.scenario.model_updates:
+        if self.task.model_updates:
             self._update_model(self.task.model_updates, baseline)
 
         baseline.inp.save(self.scenario_output_path)

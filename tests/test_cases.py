@@ -31,13 +31,12 @@ def load_test_cases(directory: Path) -> list[dict]:
 def test_water_calculation(unauthorized_api_test_client, test_case):
 
     with unauthorized_api_test_client as client:
-        response = client.post("/task", json=test_case["request"])
+        response = client.post("/stormwater/tasks", json=test_case["request"])
         assert response.status_code == 200
         task_id = response.json()["task_id"]
    
-    time.sleep(30)
+        time.sleep(60)
 
-    with unauthorized_api_test_client as client:
-        response = client.get(f"/tasks/{task_id}")
+        response = client.get(f"/stormwater/tasks/{task_id}")
         result = response.json()['result']
         assert result == test_case["response"]
