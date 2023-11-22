@@ -11,6 +11,9 @@ venv: create-env
 	$(PIP) install -r requirements.txt
 	$(PIP) install -r requirements-dev.txt
 
+start:
+	docker compose up --build
+
 fmt:
 	black ./stormwater_api/ ./tests/
 	isort ./stormwater_api/ ./tests/
