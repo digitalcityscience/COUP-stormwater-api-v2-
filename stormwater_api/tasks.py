@@ -25,7 +25,6 @@ def compute_task(task_def: StormwaterCalculationInput) -> dict:
     ).perform_swmm_analysis()
 
     return {
-        "result_format": task_def["result_format"],
         "geojson": calc_result,
     }
 

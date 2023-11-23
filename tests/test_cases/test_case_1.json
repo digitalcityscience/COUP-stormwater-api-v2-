@@ -9,7 +9,6 @@
                 "subcatchment_id": "Sub003"
             }
         ],
-        "result_format": "json",
         "subcatchments": {
             "type": "FeatureCollection",
             "features": [
@@ -4985,7 +4984,6 @@
         }
     },
     "response": {
-        "result_format": "json",
         "geojson": {
             "rain": [
                 2.9,
