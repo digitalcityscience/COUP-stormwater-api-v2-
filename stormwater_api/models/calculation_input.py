@@ -46,7 +46,6 @@ class StormwaterScenario(BaseModelStrict):
 
 class StormwaterCalculationInput(StormwaterScenario):
     subcatchments: dict
-    result_format: str
 
     @property
     def scenario_hash(self) -> str:
