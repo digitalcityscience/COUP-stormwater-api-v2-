@@ -21,7 +21,7 @@ async def process_job(
         logger.info(
             f"Result fetched from cache with key: {calculation_input.celery_key}"
         )
-        return {"result": result}
+        return {"job_id": result["job_id"]}
 
     logger.info(
         f"Result with key: {calculation_input.celery_key} not found in cache. Starting calculation ..."
@@ -32,13 +32,12 @@ async def process_job(
 
 @router.get("/jobs/{job_id}/results")
 async def get_job_results(job_id: str):
+
     async_result = AsyncResult(job_id, app=celery_app)
 
     response = {
         "job_id": async_result.id,
         "job_state": async_result.state,
-        "job_succeeded": async_result.successful(),
-        "result_ready": async_result.ready(),
     }
 
     if async_result.ready():
@@ -50,8 +49,6 @@ async def get_job_results(job_id: str):
 @router.get("/jobs/{job_id}/status")
 async def get_job_status(job_id: str):
     async_result = AsyncResult(job_id, app=celery_app)
-    state = async_result.state
-    if state == "FAILURE":
-        state = f"FAILURE : {str(async_result.get())}"
-
-    return {"status": state}
+    if async_result.state == "FAILURE":
+        return {"status": "FAILURE", "details": {str(async_result.get())}}
+    return {"status": async_result.state}

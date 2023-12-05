@@ -32,14 +32,16 @@ class ScenarioProcessor:
         input_files_dir: Path,
         rain_data_dir: Path,
     ) -> None:
-        
+
         self.task = task_definition
         self.scenario_inp_path = input_files_dir / self.task.input_filename
         self.scenario_output_dir = base_output_dir / self.task.scenario_hash
         self.rain_data_dir = rain_data_dir
 
         self.scenario_output_path = str(self.scenario_output_dir / "scenario.inp")
-        self.subcatchments_output_path = str(self.scenario_output_dir / "subcatchments.json")
+        self.subcatchments_output_path = str(
+            self.scenario_output_dir / "subcatchments.json"
+        )
         self.calculation_output_path = str(self.scenario_output_dir / "scenario.out")
         self.rpt_file_output_path = str(self.scenario_output_dir / "scenario.rpt")
 
@@ -50,7 +52,9 @@ class ScenarioProcessor:
         self._make_inp_file()
 
         logger.info("Saving subcatchments...")
-        self._save_subcatchments(self.task.subcatchments, self.subcatchments_output_path)
+        self._save_subcatchments(
+            self.task.subcatchments, self.subcatchments_output_path
+        )
 
         logger.info("Computing scenario...")
         solver.swmm_run(
