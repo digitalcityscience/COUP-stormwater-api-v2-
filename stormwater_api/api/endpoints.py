@@ -35,15 +35,13 @@ async def get_job_results(job_id: str):
 
     async_result = AsyncResult(job_id, app=celery_app)
 
-    response = {
+    if async_result.successful():
+        return {"result": async_result.get()}
+
+    return {
         "job_id": async_result.id,
         "job_state": async_result.state,
     }
-
-    if async_result.ready():
-        response["result"] = async_result.get()
-
-    return response
 
 
 @router.get("/jobs/{job_id}/status")
