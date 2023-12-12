@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["jobs"])
 
 
-@router.post("/execution")
+@router.post("/processes/runoff/execution")
 async def process_job(
     calculation_input: StormwaterCalculationInput,
 ):
