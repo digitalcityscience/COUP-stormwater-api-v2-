@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 from stormwater_api.api.endpoints import router as tasks_router
 from stormwater_api.api.exception_handlers import (
@@ -17,6 +18,17 @@ app = FastAPI(
     title=settings.title,
     descriprition=settings.description,
     version=settings.version,
+    redoc_url="/stormwater/redoc",
+    docs_url="/stormwater/docs",
+    openapi_url="/stormwater/openapi.json",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
