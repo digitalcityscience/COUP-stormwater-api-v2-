@@ -7,19 +7,32 @@ import pytest
 TEST_CASES_DIR = Path(__file__).parent / "test_cases"
 
 
+def wait_for_job_completion(client, endpoint, total_timeout=300):
+    start_time = time.time()
+    status = "PENDING"
+
+    while status == "PENDING":
+        time.sleep(5)
+
+        if time.time() - start_time > total_timeout:
+            raise Exception(
+                f"Timeout reached. Job status still PENDING after {total_timeout} seconds."
+            )
+
+        response = client.get(endpoint)
+        if response.status_code == 200:
+            status = response.json().get("status")
+            print(f"Job status: {status}")
+
+
 def load_test_cases(directory: Path) -> list[dict]:
 
     json_data_list = []
 
-    # Iterate over each JSON file in the directory
     for file_path in directory.glob("*.json"):
-        # Read and parse the JSON file
-        try:
-            with open(file_path, "r") as file:
-                data = json.loads(file.read())
-                json_data_list.append(data)
-        except Exception as e:
-            return f"Error reading file {file_path.name}: {e}"
+        with open(file_path, "r") as file:
+            data = json.loads(file.read())
+            json_data_list.append(data)
 
     return json_data_list
 
@@ -31,11 +44,17 @@ def load_test_cases(directory: Path) -> list[dict]:
 def test_water_calculation(unauthorized_api_test_client, test_case):
 
     with unauthorized_api_test_client as client:
-        response = client.post("/stormwater/processes/runoff/execution", json=test_case["request"])
+        response = client.post(
+            "/stormwater/processes/runoff/execution", json=test_case["request"]
+        )
         assert response.status_code == 200
         job_id = response.json()["job_id"]
+        print(job_id)
 
-        time.sleep(60)
+        status_endpoint = f"/stormwater/jobs/{job_id}/status"
+        wait_for_job_completion(client, status_endpoint)
+        response = client.get(status_endpoint)
+        assert response.json()["status"] == "SUCCESS"
 
         response = client.get(f"/stormwater/jobs/{job_id}/results")
         result = response.json()["result"]
