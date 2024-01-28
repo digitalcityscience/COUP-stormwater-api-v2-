@@ -24,6 +24,7 @@ app = FastAPI(
     openapi_url=f"{API_PREFIX}/openapi.json",
 )
 
+
 @app.get(f"{API_PREFIX}/health_check", tags=["ROOT"])
 async def health_check():
     return "ok"
